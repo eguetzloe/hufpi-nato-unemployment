@@ -1,0 +1,79 @@
+---
+title: "HUFPI NATO Unemployment Visualizations"
+author: "Erin Guetzloe"
+date: "3/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(tidyselect)
+library(purrr)
+
+data <- read_xlsx("data/unemployment-data.xlsx") %>%
+  clean_names() %>%
+  as_tibble() %>%
+  filter(country %in% c("Norway", "Germany", "Italy", "Denmark", "Poland", "Turkey", "Belgium", "Greece", "Austria", "Cyprus", "Finland", "Ireland", "Malta", "Sweden")) %>%
+  select(country, unit, num_range("x", 1960:2022)) %>%
+  set_names(~stringr::str_replace_all(., "x", "")) %>%
+  pivot_longer(cols = "1960":"2022", names_to = "year", values_to = "rate") %>%
+  mutate(nato = ifelse(country %in% c("Norway", "Britain", "Germany", "Italy", "Denmark", "Poland", "Turkey", "Belgium", "Greece"), 1, 0)) %>%
+  filter(rate != 0) %>%
+  rename(Country = "country")
+
+data$year <- as.numeric(as.character(data$year))
+
+nawru_data <- data %>%
+  filter(unit == "Rate") 
+
+pc_active_pop_data <- data %>%
+  filter(unit == "(Percentage of active population)")
+
+nutn_data <- data %>%
+  filter(unit == "1000 persons")
+
+```
+
+```{r Non-Accelerating Wage Rates of Unemployment Vizualization}
+
+nawru_plot <- nawru_data %>%
+  ggplot(aes(x = year, y = rate, color = nato)) +
+  geom_line(aes(linetype = Country)) +
+  guides(color = FALSE) +
+  labs(x = "Year", y = "Unemployment Rate (in Percent)", title = "Non-Accelerating Wage Rates of Unemployment by Country", subtitle = "NATO members vs. NATO equivalent countries", caption = "NATO members are graphed in blue; NATO equivalents are graphed in black.") +
+  theme_bw() +
+  theme(plot.title = element_text(face = "bold", size = 16)) 
+
+nawru_plot
+
+```
+
+```{r Unemployment Rate as Percent of Active Population Vizualization}
+
+pc_active_pop_plot <- pc_active_pop_data %>%
+  ggplot(aes(x = year, y = rate, color = nato)) +
+  geom_line(aes(linetype = Country)) +
+  guides(color = FALSE) +
+  labs(x = "Year", y = "Unemployment Rate (in Percent)", title = "Percent of Active Population Unemployed by Country", subtitle = "NATO members vs. NATO equivalent countries", caption = "NATO members are graphed in blue; NATO equivalents are graphed in black.") +
+  theme_bw() +
+  theme(plot.title = element_text(face = "bold", size = 18)) 
+
+pc_active_pop_plot
+
+```
+
+```{r Total Unemployment Rate Vizualization}
+
+nutn_plot <- nutn_data %>%
+  ggplot(aes(x = year, y = rate, color = nato)) +
+  geom_line(aes(linetype = Country)) +
+  guides(color = FALSE) +
+  labs(x = "Year", y = "Unemployment Rate (in Thousands of People)", title = "Total Unemployment Rate by Country", subtitle = "NATO members vs. NATO equivalent countries", caption = "NATO members are graphed in blue; NATO equivalents are graphed in black.") +
+  theme_bw() +
+  theme(plot.title = element_text(face = "bold", size = 20)) 
+
+nutn_plot
+
+```
